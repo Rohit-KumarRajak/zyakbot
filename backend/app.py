@@ -24,9 +24,22 @@ def chat():
         'Content-Type': 'application/json'
     }
     data = {
-        "model": "llama3-8b-8192",
-        "messages": [{"role": "user", "content": user_input}]
-    }
+    "model": "llama3-8b-8192",
+    "messages": [
+        {
+            "role": "system",
+            "content": (
+                "You are ZyakBot, a helpful and intelligent AI assistant created by Rohit Kumar Rajak. "
+                "Always be polite, and if someone asks who made you, clearly say that you were created by Rohit Kumar Rajak."
+            )
+        },
+        {
+            "role": "user",
+            "content": user_input
+        }
+    ]
+}
+
 
     try:
         response = requests.post('https://api.groq.com/openai/v1/chat/completions', headers=headers, json=data)
