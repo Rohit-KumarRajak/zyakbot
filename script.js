@@ -2,25 +2,36 @@
 function sendMessage() {
   const userInput = document.getElementById("userInput");
   const message = userInput.value.trim();
-
   if (message === "") return;
 
   addMessage("user", message);
   userInput.value = "";
+  userInput.disabled = true;
 
-  fetch("http://127.0.0.1:5000/chat", {
+  // Show bot typing...
+  addMessage("bot", "⏳ Thinking...");
 
+  fetch("https://zyakbot-backend.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message: message }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Server error");
+      }
+      return response.json();
+    })
     .then((data) => {
-      addMessage("bot", data.reply);
+      replaceLastBotMessage(data.reply);
     })
     .catch((error) => {
-      addMessage("bot", "❌ Error connecting to the server.");
+      replaceLastBotMessage("❌ Error connecting to the server.");
       console.error("Error:", error);
+    })
+    .finally(() => {
+      userInput.disabled = false;
+      userInput.focus();
     });
 }
 
@@ -34,10 +45,19 @@ function addMessage(sender, text) {
   chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
+// Replace the last bot message (used for loading indicator)
+function replaceLastBotMessage(newText) {
+  const chatContainer = document.getElementById("chat");
+  const messages = chatContainer.getElementsByClassName("bot-msg");
+  if (messages.length > 0) {
+    messages[messages.length - 1].textContent = newText;
+  }
+}
+
 // Voice input
 function startVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) {
-    alert("Voice recognition not supported in your browser.");
+    alert("🎤 Voice recognition not supported in your browser.");
     return;
   }
 

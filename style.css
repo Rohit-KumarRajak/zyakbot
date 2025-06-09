@@ -132,6 +132,29 @@ body {
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.6);
 }
 
+.fullscreen-toggle {
+  text-align: center;
+}
+
+.fullscreen-toggle button {
+  margin-top: 10px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: bold;
+  border-radius: 12px;
+  background: #1f1f1f;
+  color: #00e5ff;
+  border: 2px solid #00e5ff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fullscreen-toggle button:hover {
+  background: #00e5ff;
+  color: #1f1f1f;
+  transform: scale(1.05);
+}
+
 .founder-footer {
   text-align: center;
   margin-top: 25px;
