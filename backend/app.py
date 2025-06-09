@@ -15,6 +15,7 @@ CORS(app, origins=["https://rohit-kumarrajak.github.io"], supports_credentials=T
 @app.route('/chat', methods=['POST', 'OPTIONS'])
 def chat():
     if request.method == 'OPTIONS':
+        # Preflight CORS request handling
         return '', 200
 
     user_input = request.json.get('message', '')
@@ -37,7 +38,7 @@ def chat():
     }
 
     # Final message list for Groq API
-    messages = [system_prompt] + session['history'][-15:]  # limit history to last 15 to avoid overflow
+    messages = [system_prompt] + session['history'][-15:]  # limit history to last 15 messages
 
     headers = {
         'Authorization': f"Bearer {os.getenv('GROQ_API_KEY')}",
