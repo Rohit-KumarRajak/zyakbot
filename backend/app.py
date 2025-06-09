@@ -76,5 +76,20 @@ def reset():
 # ---------------------------
 # Run App
 # ---------------------------
+@app.after_request
+def set_cookie_headers(response):
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    # Flask sets SameSite=Lax by default, override it
+    if 'session' in request.cookies:
+        session_cookie = request.cookies.get('session')
+        response.set_cookie(
+            'session',
+            session_cookie,
+            secure=True,
+            httponly=True,
+            samesite='None'  # 🧠 Important for cross-origin
+        )
+    return response
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
