@@ -31,7 +31,7 @@ function sendMessage() {
     })
     .finally(() => {
       userInput.disabled = false;
-      userInput.focus();
+      // Removed focus to prevent keyboard popup on mobile
     });
 }
 
@@ -42,7 +42,7 @@ function addMessage(sender, text) {
   msgDiv.className = sender === "user" ? "user-msg" : "bot-msg";
   msgDiv.textContent = text;
   chatContainer.appendChild(msgDiv);
-  chatContainer.scrollTop = chatContainer.scrollHeight;
+  chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
 }
 
 // Replace the last bot message (used for loading indicator)
@@ -68,8 +68,17 @@ function startVoiceInput() {
 
   recognition.onresult = function (event) {
     const transcript = event.results[0][0].transcript;
-    document.getElementById("userInput").value = transcript;
-    sendMessage();
+
+    const inputField = document.getElementById("userInput");
+    inputField.value = transcript;
+
+    // Prevent keyboard popup on mobile by temporarily blurring input
+    inputField.blur();
+
+    // Small delay for UX before sending
+    setTimeout(() => {
+      sendMessage();
+    }, 300);
   };
 
   recognition.onerror = function (event) {
