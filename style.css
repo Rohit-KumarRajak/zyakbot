@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
 body {
   margin: 0;
   padding: 0;
@@ -54,6 +56,7 @@ body {
 .chat-container {
   height: 370px;
   overflow-y: auto;
+  overflow-anchor: auto;
   background: #1e1e1e;
   border-radius: 15px;
   padding: 18px;
@@ -64,6 +67,15 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.user-msg, .bot-msg {
+  animation: fadeInMsg 0.25s ease-in-out;
+}
+
+@keyframes fadeInMsg {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .user-msg {
@@ -98,6 +110,7 @@ body {
 
 .input-area input[type="text"] {
   flex: 1;
+  min-height: 52px;
   padding: 14px 18px;
   border-radius: 14px;
   border: 1px solid #555;
@@ -207,4 +220,18 @@ footer p {
   footer p {
     font-size: 15px;
   }
+}
+
+/* Fullscreen optimization */
+html:fullscreen .container {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  padding: 20px 15px;
+}
+
+html:fullscreen .chat-container {
+  flex: 1;
+  height: auto;
 }
