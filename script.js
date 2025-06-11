@@ -14,7 +14,7 @@ function sendMessage() {
   fetch("https://zyakbot-backend.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-   // credentials: 'include',  // 🟢 Yeh line bahut important hai history ko backend me bhejne ke lia but iske kaaran error connecting to server aa raha tha to comment out kar diya
+    credentials: 'include',  // 🟢 Yeh line bahut important hai history ko backend me bhejne ke lia but iske kaaran error connecting to server aa raha tha to comment out kar diya
     body: JSON.stringify({ message: message }),
   })
     .then((response) => {
