@@ -14,6 +14,7 @@ function sendMessage() {
   fetch("https://zyakbot-backend.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: 'include',  // 🟢 Yeh line bahut important hai history ko backend me bhejne ke lia
     body: JSON.stringify({ message: message }),
   })
     .then((response) => {
