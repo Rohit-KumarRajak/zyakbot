@@ -7,10 +7,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv("SECRET_KEY", "super-zyak-secret-256!")  # Production key fallback
+app.secret_key = os.environ["SECRET_KEY"]  # No fallback — secure only
 
 # Allow your frontend to talk to backend
-CORS(app, origins=["https://rohit-kumarrajak.github.io"], supports_credentials=True)
+CORS(app, supports_credentials=True, origins=["https://rohit-kumarrajak.github.io"])
 
 # ---------------------------
 # Main Chat Endpoint
