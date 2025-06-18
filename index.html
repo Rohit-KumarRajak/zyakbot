@@ -41,13 +41,14 @@
 
     .input-area {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
       padding: 10px;
       background-color: #1a1c29;
     }
 
     .input-area input {
-      flex: 1;
+      flex: 1 1 200px;
       padding: 10px;
       border: none;
       border-radius: 6px;
@@ -108,12 +109,13 @@
       <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoiceInput()">🎤 Speak</button>
+      <button id="talkToggle" onclick="toggleTalkMode()">🔇 Talk Mode: OFF</button>
     </div>
 
     <div class="note">📌 Note: ZyakBot remembers messages in a session and helps with coding, science, stories & more. Refreshing resets the chat.</div>
 
     <div class="fullscreen-toggle">
-      <button onclick="toggleFullscreen()">🔲 Fullscreen</button>
+      <button id="fullscreenBtn" onclick="toggleFullscreen()">🔲 Fullscreen</button>
     </div>
 
     <footer class="founder-footer">
@@ -126,13 +128,16 @@
   <script>
     function toggleFullscreen() {
       const container = document.getElementById("mainContainer");
+      const btn = document.getElementById("fullscreenBtn");
       if (!document.fullscreenElement) {
         container.requestFullscreen().then(() => {
           container.classList.add("fullscreen-mode");
+          btn.textContent = "❎ Exit Fullscreen";
         });
       } else {
         document.exitFullscreen().then(() => {
           container.classList.remove("fullscreen-mode");
+          btn.textContent = "🔲 Fullscreen";
         });
       }
     }
