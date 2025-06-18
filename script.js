@@ -1,4 +1,34 @@
-// Send message to backend
+let isTalkModeOn = false;
+
+const synth = window.speechSynthesis;
+let selectedLang = "en-US";
+let selectedVoice = null;
+let rate = 1;
+let pitch = 1;
+
+document.addEventListener("DOMContentLoaded", () => {
+  populateVoices();
+
+  document.getElementById("talkModeBtn").addEventListener("click", () => {
+    isTalkModeOn = !isTalkModeOn;
+    document.getElementById("talkModeBtn").textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
+  });
+
+  document.getElementById("langSelect").addEventListener("change", (e) => {
+    selectedLang = e.target.value;
+    populateVoices();
+  });
+
+  document.getElementById("rateSlider").addEventListener("input", (e) => {
+    rate = parseFloat(e.target.value);
+  });
+
+  document.getElementById("pitchSlider").addEventListener("input", (e) => {
+    pitch = parseFloat(e.target.value);
+  });
+});
+
+// 🧠 Send user message to backend
 function sendMessage() {
   const userInput = document.getElementById("userInput");
   const message = userInput.value.trim();
@@ -8,83 +38,95 @@ function sendMessage() {
   userInput.value = "";
   userInput.disabled = true;
 
-  // Show bot typing...
   addMessage("bot", "⏳ Thinking...");
 
   fetch("https://zyakbot-backend.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: 'include',  // 🟢 Yeh line bahut important hai history ko backend me bhejne ke lia but iske kaaran error connecting to server aa raha tha to comment out kar diya
-    body: JSON.stringify({ message: message }),
+    credentials: "include",
+    body: JSON.stringify({ message }),
   })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Server error");
-      }
-      return response.json();
+    .then((res) => {
+      if (!res.ok) throw new Error("Server error");
+      return res.json();
     })
     .then((data) => {
       replaceLastBotMessage(data.reply);
+      if (isTalkModeOn) speakOutLoud(data.reply);
     })
-    .catch((error) => {
+    .catch((err) => {
       replaceLastBotMessage("❌ Error connecting to the server.");
-      console.error("Error:", error);
+      console.error("Error:", err);
     })
     .finally(() => {
       userInput.disabled = false;
-      // Removed focus to prevent keyboard popup on mobile
     });
 }
 
-// Display message in chat
+// 🧾 Display chat messages
 function addMessage(sender, text) {
-  const chatContainer = document.getElementById("chat");
-  const msgDiv = document.createElement("div");
-  msgDiv.className = sender === "user" ? "user-msg" : "bot-msg";
-  msgDiv.textContent = text;
-  chatContainer.appendChild(msgDiv);
-  chatContainer.scrollTo({ top: chatContainer.scrollHeight, behavior: "smooth" });
+  const chat = document.getElementById("chat");
+  const div = document.createElement("div");
+  div.className = sender === "user" ? "user-msg" : "bot-msg";
+  div.textContent = text;
+  chat.appendChild(div);
+  chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
-// Replace the last bot message (used for loading indicator)
-function replaceLastBotMessage(newText) {
-  const chatContainer = document.getElementById("chat");
-  const messages = chatContainer.getElementsByClassName("bot-msg");
+// ✨ Replace last bot message (used after loading indicator)
+function replaceLastBotMessage(text) {
+  const chat = document.getElementById("chat");
+  const messages = chat.getElementsByClassName("bot-msg");
   if (messages.length > 0) {
-    messages[messages.length - 1].textContent = newText;
+    messages[messages.length - 1].textContent = text;
   }
 }
 
-// Voice input
+// 🎤 Voice input via browser
 function startVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) {
-    alert("🎤 Voice recognition not supported in your browser.");
+    alert("🎤 Voice recognition not supported.");
     return;
   }
 
-  const recognition = new webkitSpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  const recog = new webkitSpeechRecognition();
+  recog.lang = selectedLang;
+  recog.interimResults = false;
+  recog.maxAlternatives = 1;
 
-  recognition.onresult = function (event) {
+  recog.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
-
     const inputField = document.getElementById("userInput");
     inputField.value = transcript;
-
-    // Prevent keyboard popup on mobile by temporarily blurring input
     inputField.blur();
-
-    // Small delay for UX before sending
-    setTimeout(() => {
-      sendMessage();
-    }, 300);
+    setTimeout(() => sendMessage(), 300);
   };
 
-  recognition.onerror = function (event) {
+  recog.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
   };
 
-  recognition.start();
+  recog.start();
+}
+
+// 🗣️ Voice Output
+function speakOutLoud(text) {
+  if (!synth) return;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = selectedLang;
+  utter.rate = rate;
+  utter.pitch = pitch;
+  if (selectedVoice) utter.voice = selectedVoice;
+  synth.speak(utter);
+}
+
+// 🔊 Load voices dynamically
+function populateVoices() {
+  const voices = synth.getVoices();
+  selectedVoice = voices.find(v => v.lang === selectedLang) || voices[0];
+}
+
+// 📦 Update voices on change (some browsers delay loading)
+if (typeof speechSynthesis !== "undefined") {
+  speechSynthesis.onvoiceschanged = populateVoices;
 }
