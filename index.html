@@ -41,14 +41,16 @@
 
     .input-area {
       display: flex;
-      flex-wrap: wrap;
       gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
       padding: 10px;
       background-color: #1a1c29;
     }
 
     .input-area input {
-      flex: 1 1 200px;
+      flex: 1;
       padding: 10px;
       border: none;
       border-radius: 6px;
@@ -94,6 +96,25 @@
       flex: 1;
       height: 100vh;
     }
+
+    .voice-controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      padding: 5px 10px;
+      background-color: #1a1c29;
+    }
+
+    .voice-controls label {
+      color: #ccc;
+      font-size: 13px;
+    }
+
+    .voice-controls input[type="range"] {
+      width: 100px;
+    }
   </style>
 </head>
 <body>
@@ -109,13 +130,27 @@
       <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoiceInput()">🎤 Speak</button>
-      <button id="talkToggle" onclick="toggleTalkMode()">🔇 Talk Mode: OFF</button>
+      <button onclick="toggleTalkMode(this)">🔈 Talk Mode: Off</button>
+    </div>
+
+    <div class="voice-controls">
+      <label for="voiceLang">🌐 Language:</label>
+      <select id="voiceLang">
+        <option value="hi-IN">Hindi</option>
+        <option value="en-US" selected>English</option>
+      </select>
+
+      <label for="voiceSpeed">⚡ Speed:</label>
+      <input type="range" id="voiceSpeed" min="0.5" max="2" value="1" step="0.1">
+
+      <label for="voicePitch">🎵 Pitch:</label>
+      <input type="range" id="voicePitch" min="0" max="2" value="1" step="0.1">
     </div>
 
     <div class="note">📌 Note: ZyakBot remembers messages in a session and helps with coding, science, stories & more. Refreshing resets the chat.</div>
 
     <div class="fullscreen-toggle">
-      <button id="fullscreenBtn" onclick="toggleFullscreen()">🔲 Fullscreen</button>
+      <button onclick="toggleFullscreen()" id="fullscreenBtn">🔲 Fullscreen</button>
     </div>
 
     <footer class="founder-footer">
@@ -132,7 +167,7 @@
       if (!document.fullscreenElement) {
         container.requestFullscreen().then(() => {
           container.classList.add("fullscreen-mode");
-          btn.textContent = "❎ Exit Fullscreen";
+          btn.textContent = "❌ Exit Fullscreen";
         });
       } else {
         document.exitFullscreen().then(() => {
