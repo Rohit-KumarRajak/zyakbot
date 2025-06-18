@@ -1,35 +1,27 @@
 let isTalkModeOn = false;
-
 const synth = window.speechSynthesis;
-let selectedLang = "en-US";
-let selectedVoice = null;
-let rate = 1;
-let pitch = 1;
+let lastBotMessage = "";
 
 document.addEventListener("DOMContentLoaded", () => {
-  populateVoices();
-
+  // Setup Talk Mode button
   document.getElementById("talkModeBtn").addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
-    document.getElementById("talkModeBtn").textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
-  });
+    const btn = document.getElementById("talkModeBtn");
+    btn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
-  // ✅ Fixed: Matching HTML IDs
-  document.getElementById("voiceLang").addEventListener("change", (e) => {
-    selectedLang = e.target.value;
-    populateVoices();
-  });
+    // If Talk Mode turned ON after message was already shown
+    if (isTalkModeOn && lastBotMessage !== "") {
+      speakOutLoud(lastBotMessage);
+    }
 
-  document.getElementById("voiceSpeed").addEventListener("input", (e) => {
-    rate = parseFloat(e.target.value);
-  });
-
-  document.getElementById("voicePitch").addEventListener("input", (e) => {
-    pitch = parseFloat(e.target.value);
+    // If turned OFF, stop any speaking
+    if (!isTalkModeOn && synth.speaking) {
+      synth.cancel();
+    }
   });
 });
 
-// 🧠 Send user message to backend
+// 🧠 Send message to backend
 function sendMessage() {
   const userInput = document.getElementById("userInput");
   const message = userInput.value.trim();
@@ -52,19 +44,20 @@ function sendMessage() {
       return res.json();
     })
     .then((data) => {
+      lastBotMessage = data.reply;
       replaceLastBotMessage(data.reply);
       if (isTalkModeOn) speakOutLoud(data.reply);
     })
     .catch((err) => {
-      replaceLastBotMessage("❌ Error connecting to the server.");
       console.error("Error:", err);
+      replaceLastBotMessage("❌ Error connecting to the server.");
     })
     .finally(() => {
       userInput.disabled = false;
     });
 }
 
-// 🧾 Display chat messages
+// 💬 Add chat message
 function addMessage(sender, text) {
   const chat = document.getElementById("chat");
   const div = document.createElement("div");
@@ -74,7 +67,7 @@ function addMessage(sender, text) {
   chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
-// ✨ Replace last bot message (used after loading indicator)
+// 🔁 Replace last bot message
 function replaceLastBotMessage(text) {
   const chat = document.getElementById("chat");
   const messages = chat.getElementsByClassName("bot-msg");
@@ -83,7 +76,7 @@ function replaceLastBotMessage(text) {
   }
 }
 
-// 🎤 Voice input via browser
+// 🎤 Voice input
 function startVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) {
     alert("🎤 Voice recognition not supported.");
@@ -91,7 +84,7 @@ function startVoiceInput() {
   }
 
   const recog = new webkitSpeechRecognition();
-  recog.lang = selectedLang;
+  recog.lang = "en-US"; // Default to English, or change to "hi-IN"
   recog.interimResults = false;
   recog.maxAlternatives = 1;
 
@@ -110,24 +103,14 @@ function startVoiceInput() {
   recog.start();
 }
 
-// 🗣️ Voice Output
+// 🗣️ Speak out loud
 function speakOutLoud(text) {
   if (!synth) return;
+  if (synth.speaking) synth.cancel(); // Stop any current speech
+
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = selectedLang;
-  utter.rate = rate;
-  utter.pitch = pitch;
-  if (selectedVoice) utter.voice = selectedVoice;
+  utter.lang = "en-US"; // Change to "hi-IN" for Hindi
+  utter.rate = 1;
+  utter.pitch = 1;
   synth.speak(utter);
-}
-
-// 🔊 Load voices dynamically
-function populateVoices() {
-  const voices = synth.getVoices();
-  selectedVoice = voices.find(v => v.lang === selectedLang) || voices[0];
-}
-
-// 📦 Update voices on change (some browsers delay loading)
-if (typeof speechSynthesis !== "undefined") {
-  speechSynthesis.onvoiceschanged = populateVoices;
 }
