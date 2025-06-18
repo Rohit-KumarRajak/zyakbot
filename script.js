@@ -14,16 +14,17 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("talkModeBtn").textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
   });
 
-  document.getElementById("langSelect").addEventListener("change", (e) => {
+  // ✅ Fixed: Matching HTML IDs
+  document.getElementById("voiceLang").addEventListener("change", (e) => {
     selectedLang = e.target.value;
     populateVoices();
   });
 
-  document.getElementById("rateSlider").addEventListener("input", (e) => {
+  document.getElementById("voiceSpeed").addEventListener("input", (e) => {
     rate = parseFloat(e.target.value);
   });
 
-  document.getElementById("pitchSlider").addEventListener("input", (e) => {
+  document.getElementById("voicePitch").addEventListener("input", (e) => {
     pitch = parseFloat(e.target.value);
   });
 });
