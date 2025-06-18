@@ -117,6 +117,8 @@
     }
   </style>
 </head>
+<!-- CHANGES ONLY: Replace your existing <body> tag with the below -->
+
 <body>
   <div class="container" id="mainContainer">
     <header class="top-header">
@@ -130,24 +132,10 @@
       <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoiceInput()">🎤 Speak</button>
-      <!-- ✅ ID added to track Talk Mode button in JS -->
       <button onclick="toggleTalkMode(this)" id="talkModeBtn">🔈 Talk Mode: Off</button>
     </div>
 
-    <!-- ✅ Voice Controls Panel -->
-    <div class="voice-controls">
-      <label for="voiceLang">🌐 Language:</label>
-      <select id="voiceLang">
-        <option value="hi-IN">Hindi</option>
-        <option value="en-US" selected>English</option>
-      </select>
-
-      <label for="voiceSpeed">⚡ Speed:</label>
-      <input type="range" id="voiceSpeed" min="0.5" max="2" value="1" step="0.1">
-
-      <label for="voicePitch">🎵 Pitch:</label>
-      <input type="range" id="voicePitch" min="0" max="2" value="1" step="0.1">
-    </div>
+    <!-- ✅ Removed voice-controls section -->
 
     <div class="note">📌 Note: ZyakBot remembers messages in a session and helps with coding, science, stories & more. Refreshing resets the chat.</div>
 
