@@ -130,9 +130,11 @@
       <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoiceInput()">🎤 Speak</button>
-      <button onclick="toggleTalkMode(this)">🔈 Talk Mode: Off</button>
+      <!-- ✅ ID added to track Talk Mode button in JS -->
+      <button onclick="toggleTalkMode(this)" id="talkModeBtn">🔈 Talk Mode: Off</button>
     </div>
 
+    <!-- ✅ Voice Controls Panel -->
     <div class="voice-controls">
       <label for="voiceLang">🌐 Language:</label>
       <select id="voiceLang">
