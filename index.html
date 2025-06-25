@@ -10,7 +10,7 @@
 </head>
 <body>
   <div class="container" id="mainContainer">
-    <header class="top-header" id="header">
+    <header class="top-header">
       <h1>👋 Welcome to ZyakBot</h1>
       <h2>💬 Ask anything below</h2>
     </header>
@@ -28,7 +28,7 @@
       <button onclick="toggleFullscreen()" id="fullscreenBtn">🔲 Fullscreen</button>
     </div>
 
-    <footer class="founder-footer" id="footer">
+    <footer class="founder-footer">
       <img src="PF.png" alt="Founder" class="founder-img-circle" />
       <p><strong>Founder: Rohit Kumar Rajak</strong></p>
     </footer>
@@ -38,23 +38,23 @@
   <script>
     function toggleFullscreen() {
       const container = document.getElementById("mainContainer");
-      const header = document.getElementById("header");
-      const footer = document.getElementById("footer");
       const btn = document.getElementById("fullscreenBtn");
+      const header = document.querySelector("header.top-header");
+      const footer = document.querySelector("footer.founder-footer");
 
       if (!document.fullscreenElement) {
         container.requestFullscreen().then(() => {
           container.classList.add("fullscreen-mode");
-          header.style.display = "none";
-          footer.style.display = "none";
           btn.textContent = "❌ Exit Fullscreen";
+          if (header) header.style.display = "none";
+          if (footer) footer.style.display = "none";
         });
       } else {
         document.exitFullscreen().then(() => {
           container.classList.remove("fullscreen-mode");
-          header.style.display = "block";
-          footer.style.display = "block";
           btn.textContent = "🔲 Fullscreen";
+          if (header) header.style.display = "";
+          if (footer) footer.style.display = "";
         });
       }
     }
