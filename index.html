@@ -6,7 +6,6 @@
   <meta name="google-site-verification" content="QfRMym8BlwRWd4Paaq1s60VYKnxebOhnTehrhYYi1Bk" />
   <meta name="description" content="ZyakBot is an intelligent AI chatbot assistant created by Rohit Kumar Rajak to help you get instant answers.">
   <title>ZyakBot – Rohit AI Chatbot</title>
-  <!-- Google Fonts: Poppins -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <style>
@@ -96,29 +95,8 @@
       flex: 1;
       height: 100vh;
     }
-
-    .voice-controls {
-      display: flex;
-      gap: 8px;
-      justify-content: center;
-      align-items: center;
-      flex-wrap: wrap;
-      padding: 5px 10px;
-      background-color: #1a1c29;
-    }
-
-    .voice-controls label {
-      color: #ccc;
-      font-size: 13px;
-    }
-
-    .voice-controls input[type="range"] {
-      width: 100px;
-    }
   </style>
 </head>
-<!-- CHANGES ONLY: Replace your existing <body> tag with the below -->
-
 <body>
   <div class="container" id="mainContainer">
     <header class="top-header">
@@ -134,8 +112,6 @@
       <button onclick="startVoiceInput()">🎤 Speak</button>
       <button onclick="toggleTalkMode(this)" id="talkModeBtn">🔈 Talk Mode: Off</button>
     </div>
-
-    <!-- ✅ Removed voice-controls section -->
 
     <div class="note">📌 Note: ZyakBot remembers messages in a session and helps with coding, science, stories & more. Refreshing resets the chat.</div>
 
@@ -158,11 +134,15 @@
         container.requestFullscreen().then(() => {
           container.classList.add("fullscreen-mode");
           btn.textContent = "❌ Exit Fullscreen";
+        }).catch(err => {
+          console.error("Fullscreen error:", err);
         });
       } else {
         document.exitFullscreen().then(() => {
           container.classList.remove("fullscreen-mode");
           btn.textContent = "🔲 Fullscreen";
+        }).catch(err => {
+          console.error("Exit Fullscreen error:", err);
         });
       }
     }
