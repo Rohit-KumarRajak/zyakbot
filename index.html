@@ -4,23 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ZyakBot – Rohit AI Chatbot</title>
-  <meta name="description" content="ZyakBot is an AI chatbot created by Rohit Kumar Rajak to help you with instant answers.">
+  <meta name="description" content="ZyakBot is an AI chatbot created by Rohit Kumar Rajak for instant answers.">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container" id="mainContainer">
-    
-    <!-- Header (will hide in fullscreen) -->
     <header class="top-header" id="topHeader">
       <h1>👋 Welcome to ZyakBot</h1>
       <h2>💬 Ask anything below</h2>
     </header>
 
-    <!-- Chat Section -->
     <div class="chat-container" id="chat"></div>
 
-    <!-- Input Area -->
     <div class="input-area">
       <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" />
       <button onclick="sendMessage()">Send</button>
@@ -28,12 +24,10 @@
       <button id="talkModeBtn">🔈 Talk Mode: OFF</button>
     </div>
 
-    <!-- Fullscreen Toggle -->
     <div class="fullscreen-toggle">
       <button onclick="toggleFullscreen()" id="fullscreenBtn">🔲 Fullscreen</button>
     </div>
 
-    <!-- Footer (will hide in fullscreen) -->
     <footer class="founder-footer" id="footer">
       <img src="PF.png" alt="Founder" class="founder-img-circle" />
       <p><strong>Founder: Rohit Kumar Rajak</strong></p>
@@ -41,29 +35,26 @@
   </div>
 
   <script src="script.js"></script>
-
   <script>
     function toggleFullscreen() {
+      const container = document.getElementById("mainContainer");
       const btn = document.getElementById("fullscreenBtn");
       const header = document.getElementById("topHeader");
       const footer = document.getElementById("footer");
-      const chat = document.getElementById("chat");
 
       if (!document.fullscreenElement) {
-        // Enter fullscreen
-        document.documentElement.requestFullscreen().then(() => {
+        container.requestFullscreen().then(() => {
+          container.classList.add("fullscreen-mode");
           header.style.display = "none";
           footer.style.display = "none";
           btn.textContent = "❌ Exit Fullscreen";
-          chat.style.height = "calc(100vh - 180px)"; // Adjust chat height dynamically
         });
       } else {
-        // Exit fullscreen
         document.exitFullscreen().then(() => {
-          header.style.display = "block";
-          footer.style.display = "block";
+          container.classList.remove("fullscreen-mode");
+          header.style.display = "";
+          footer.style.display = "";
           btn.textContent = "🔲 Fullscreen";
-          chat.style.height = ""; // reset to default
         });
       }
     }
