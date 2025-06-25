@@ -1,25 +1,23 @@
 let isTalkModeOn = false;
-let recognition = null;
 let synth = window.speechSynthesis;
 let lastBotMessage = "";
-let debounceTimer = null;
 
+// Talk Mode toggle button
 document.addEventListener("DOMContentLoaded", () => {
   const talkBtn = document.getElementById("talkModeBtn");
   talkBtn.addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
     talkBtn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
-    if (isTalkModeOn) {
-      if (lastBotMessage) speakOutLoud(lastBotMessage);
-      startContinuousVoiceInput();
+    if (isTalkModeOn && lastBotMessage) {
+      speakOutLoud(lastBotMessage);
     } else {
-      stopRecognition();
-      synth.cancel();
+      speakStop();
     }
   });
 });
 
+// Send message function
 function sendMessage(message = null) {
   const input = document.getElementById("userInput");
   const msg = message || input.value.trim();
@@ -40,16 +38,15 @@ function sendMessage(message = null) {
     .then(data => {
       lastBotMessage = data.reply;
       replaceLastBotMessage(data.reply);
-      if (isTalkModeOn) {
-        speakOutLoud(data.reply, () => {
-          if (isTalkModeOn) startContinuousVoiceInput();
-        });
-      }
+      if (isTalkModeOn) speakOutLoud(data.reply);
     })
     .catch(() => replaceLastBotMessage("❌ Error connecting to the server."))
-    .finally(() => (input.disabled = false));
+    .finally(() => {
+      input.disabled = false;
+    });
 }
 
+// Add chat message to UI
 function addMessage(sender, text) {
   const div = document.createElement("div");
   div.className = sender === "user" ? "user-msg" : "bot-msg";
@@ -59,70 +56,49 @@ function addMessage(sender, text) {
   chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
+// Replace thinking message with bot reply
 function replaceLastBotMessage(text) {
   const bots = document.getElementsByClassName("bot-msg");
   if (bots.length) bots[bots.length - 1].textContent = text;
 }
 
+// Manual voice input (Speak button)
 function startVoiceInput() {
-  if (!("webkitSpeechRecognition" in window)) return alert("🎤 Voice recognition not supported.");
-  stopRecognition();
-  recognition = new webkitSpeechRecognition();
+  if (!("webkitSpeechRecognition" in window)) {
+    return alert("🎤 Voice recognition not supported in this browser.");
+  }
+
+  const recognition = new webkitSpeechRecognition();
   recognition.lang = "en-US";
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
-  recognition.onresult = e => sendMessage(e.results[0][0].transcript);
-  recognition.start();
-}
 
-function startContinuousVoiceInput() {
-  if (!("webkitSpeechRecognition" in window)) return;
-  stopRecognition();
-  recognition = new webkitSpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false;
-  recognition.continuous = false;
-
-  recognition.onresult = e => {
-    clearTimeout(debounceTimer);
-    speakStop();
-    sendMessage(e.results[0][0].transcript);
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    sendMessage(transcript);
   };
 
-  recognition.onerror = e => {
-    if (isTalkModeOn && e.error !== "no-speech") {
-      debounceTimer = setTimeout(startContinuousVoiceInput, 1500);
-    }
-  };
-
-  recognition.onend = () => {
-    if (isTalkModeOn) {
-      debounceTimer = setTimeout(startContinuousVoiceInput, 1000);
-    }
+  recognition.onerror = (e) => {
+    console.error("Mic error:", e.error);
   };
 
   recognition.start();
 }
 
-function stopRecognition() {
-  if (recognition) {
-    recognition.onend = null;
-    recognition.stop();
-    recognition = null;
-  }
-}
-
-function speakOutLoud(text, onEnd) {
+// Speak bot's message
+function speakOutLoud(text) {
   if (!synth) return;
   speakStop();
+
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "en-US";
   utter.rate = 1;
   utter.pitch = 1;
-  utter.onend = () => onEnd?.();
+
   synth.speak(utter);
 }
 
+// Stop current speech
 function speakStop() {
   if (synth.speaking) synth.cancel();
 }
