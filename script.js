@@ -75,9 +75,9 @@ function replaceLastBotMessage(text) {
 function startVoiceInput() {
   const input = document.getElementById("userInput");
 
-  // 🔇 Prevent keyboard from opening
-  input.blur();
-  input.disabled = true;
+  // ✅ Prevent virtual keyboard popup
+  input.blur();          // Hide keyboard if already opened
+  input.disabled = true; // Prevent auto-open of keyboard
 
   // 🔊 Play beep sound if available
   const beep = document.getElementById("beep");
@@ -100,7 +100,8 @@ function startVoiceInput() {
 
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
-    sendMessage(transcript);
+    input.value = transcript;
+    setTimeout(() => sendMessage(), 300); // Allow brief pause before sending
   };
 
   recognition.onerror = (e) => {
