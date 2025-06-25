@@ -3,117 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="google-site-verification" content="QfRMym8BlwRWd4Paaq1s60VYKnxebOhnTehrhYYi1Bk" />
-  <meta name="description" content="ZyakBot is an intelligent AI chatbot assistant created by Rohit Kumar Rajak to help you get instant answers.">
   <title>ZyakBot – Rohit AI Chatbot</title>
+  <meta name="description" content="ZyakBot is an AI chatbot created by Rohit Kumar Rajak to help you with instant answers.">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      font-family: 'Poppins', sans-serif;
-      background-color: #0f111a;
-      color: white;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    .top-header,
-    .founder-footer {
-      padding: 10px;
-      text-align: center;
-      background-color: #1a1c29;
-    }
-
-    .chat-container {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background-color: #151722;
-    }
-
-    .input-area {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
-      padding: 10px;
-      background-color: #1a1c29;
-    }
-
-    .input-area input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-
-    .input-area button {
-      padding: 10px 12px;
-      background-color: #00aaff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    .fullscreen-toggle {
-      text-align: center;
-      padding: 10px;
-      background-color: #1a1c29;
-    }
-
-    .founder-img-circle {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-    }
-
-    .note {
-      font-size: 12px;
-      color: #cccccc;
-      text-align: center;
-      margin-top: 5px;
-      margin-bottom: 10px;
-    }
-
-    .fullscreen-mode .top-header,
-    .fullscreen-mode .founder-footer,
-    .fullscreen-mode .fullscreen-toggle {
-      display: none;
-    }
-
-    .fullscreen-mode .chat-container {
-      flex: 1;
-      height: 100vh;
-    }
-  </style>
 </head>
 <body>
   <div class="container" id="mainContainer">
     <header class="top-header">
-      <h1>👋 Hi there! Welcome to Rohit's AI Chatbot</h1>
+      <h1>👋 Welcome to ZyakBot</h1>
       <h2>💬 Ask anything below</h2>
     </header>
 
     <div class="chat-container" id="chat"></div>
 
     <div class="input-area">
-      <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" />
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoiceInput()">🎤 Speak</button>
-      <button onclick="toggleTalkMode(this)" id="talkModeBtn">🔈 Talk Mode: Off</button>
+      <button id="talkModeBtn">🔈 Talk Mode: OFF</button>
     </div>
-
-    <div class="note">📌 Note: ZyakBot remembers messages in a session and helps with coding, science, stories & more. Refreshing resets the chat.</div>
 
     <div class="fullscreen-toggle">
       <button onclick="toggleFullscreen()" id="fullscreenBtn">🔲 Fullscreen</button>
@@ -134,15 +43,11 @@
         container.requestFullscreen().then(() => {
           container.classList.add("fullscreen-mode");
           btn.textContent = "❌ Exit Fullscreen";
-        }).catch(err => {
-          console.error("Fullscreen error:", err);
         });
       } else {
         document.exitFullscreen().then(() => {
           container.classList.remove("fullscreen-mode");
           btn.textContent = "🔲 Fullscreen";
-        }).catch(err => {
-          console.error("Exit Fullscreen error:", err);
         });
       }
     }
