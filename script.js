@@ -73,13 +73,23 @@ function replaceLastBotMessage(text) {
 
 // 🎤 Start voice input
 function startVoiceInput() {
-    document.getElementById("userInput").blur(); // 🔧 Hide keyboard
+  const input = document.getElementById("userInput");
 
+  // 🔇 Prevent keyboard from opening
+  input.blur();
+  input.disabled = true;
+
+  // 🔊 Play beep sound if available
   const beep = document.getElementById("beep");
-  if (beep) beep.play();
+  if (beep) {
+    beep.currentTime = 0;
+    beep.play().catch((e) => console.error("Beep error:", e));
+  }
 
+  // 🧠 Check browser support
   if (!("webkitSpeechRecognition" in window)) {
     alert("🎤 Voice recognition not supported in this browser.");
+    input.disabled = false;
     return;
   }
 
@@ -95,6 +105,11 @@ function startVoiceInput() {
 
   recognition.onerror = (e) => {
     console.error("🎤 Mic error:", e.error);
+  };
+
+  recognition.onend = () => {
+    // ✅ Re-enable input field once recognition ends
+    input.disabled = false;
   };
 
   recognition.start();
