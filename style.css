@@ -198,24 +198,6 @@ footer p {
   text-shadow: 1px 1px 2px #000;
 }
 
-/* 🎤 Talk Mode Button */
-#talkModeBtn {
-  padding: 10px 18px;
-  background-color: #00bcd4;
-  border: none;
-  color: #fff;
-  font-weight: bold;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: 0.3s ease;
-  box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
-}
-
-#talkModeBtn:hover {
-  transform: scale(1.04);
-  background-color: #0097a7;
-}
-
 @media (max-width: 768px) {
   .container {
     padding: 20px 15px;
@@ -238,7 +220,7 @@ footer p {
   }
 }
 
-/* 🌐 Fullscreen Mode */
+/* Fullscreen optimization */
 html:fullscreen .container {
   max-width: none;
   width: 100%;
@@ -246,8 +228,28 @@ html:fullscreen .container {
   border-radius: 0;
   padding: 20px 15px;
 }
-
 html:fullscreen .chat-container {
   flex: 1;
   height: auto;
+}
+html:fullscreen .fullscreen-toggle {
+  display: block;
+}
+
+/* Talk Mode Button */
+#talkModeBtn {
+  padding: 10px 18px;
+  background-color: #00bcd4;
+  border: none;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 188, 212, 0.3);
+}
+
+#talkModeBtn:hover {
+  transform: scale(1.04);
+  background-color: #0097a7;
 }
