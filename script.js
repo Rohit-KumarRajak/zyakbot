@@ -1,61 +1,52 @@
 let isTalkModeOn = false;
-const synth = window.speechSynthesis;
+let recognition = null;
+let synth = window.speechSynthesis;
 let lastBotMessage = "";
-let isFirstInteraction = true;
 
-// DOM Ready
+// Initialize
 document.addEventListener("DOMContentLoaded", () => {
-  // Talk Mode Toggle
   document.getElementById("talkModeBtn").addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
-    const btn = document.getElementById("talkModeBtn");
-    btn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
+    document.getElementById("talkModeBtn").textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
-    if (isTalkModeOn && lastBotMessage) {
-      speakOutLoud(lastBotMessage);
-    } else if (!isTalkModeOn && synth.speaking) {
+    if (isTalkModeOn) {
+      if (lastBotMessage) speakOutLoud(lastBotMessage);
+      startContinuousVoiceInput();
+    } else {
+      stopRecognition();
       synth.cancel();
     }
   });
-
-  // 🧠 Auto greeting on load (for faster first message)
-  if (isFirstInteraction) {
-    isFirstInteraction = false;
-    setTimeout(() => {
-      sendMessage("Hello");
-    }, 300); // small delay after load
-  }
 });
 
-// 🧠 Send message to backend
-function sendMessage(msgFromVoice = null) {
+// Send message to backend
+function sendMessage(message = null) {
   const userInput = document.getElementById("userInput");
-  const message = msgFromVoice || userInput.value.trim();
-  if (message === "") return;
+  const msg = message || userInput.value.trim();
+  if (!msg) return;
 
-  addMessage("user", message);
+  addMessage("user", msg);
   userInput.value = "";
   userInput.disabled = true;
-
   addMessage("bot", "⏳ Thinking...");
 
   fetch("https://zyakbot-backend.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message: msg }),
   })
-    .then((res) => {
-      if (!res.ok) throw new Error("Server error");
-      return res.json();
-    })
+    .then((res) => res.json())
     .then((data) => {
       lastBotMessage = data.reply;
       replaceLastBotMessage(data.reply);
-      if (isTalkModeOn) speakOutLoud(data.reply);
+      if (isTalkModeOn) {
+        speakOutLoud(data.reply, () => {
+          if (isTalkModeOn) startContinuousVoiceInput();
+        });
+      }
     })
-    .catch((err) => {
-      console.error("Error:", err);
+    .catch(() => {
       replaceLastBotMessage("❌ Error connecting to the server.");
     })
     .finally(() => {
@@ -63,76 +54,94 @@ function sendMessage(msgFromVoice = null) {
     });
 }
 
-// 💬 Add message to chat
+// Add user/bot message
 function addMessage(sender, text) {
-  const chat = document.getElementById("chat");
   const div = document.createElement("div");
   div.className = sender === "user" ? "user-msg" : "bot-msg";
   div.textContent = text;
-  chat.appendChild(div);
-  chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+  document.getElementById("chat").appendChild(div);
+  document.getElementById("chat").scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
-// 🔁 Replace last bot message
+// Replace bot "Thinking..." message
 function replaceLastBotMessage(text) {
-  const chat = document.getElementById("chat");
-  const messages = chat.getElementsByClassName("bot-msg");
-  if (messages.length > 0) {
-    messages[messages.length - 1].textContent = text;
-  }
+  const bots = document.getElementsByClassName("bot-msg");
+  if (bots.length > 0) bots[bots.length - 1].textContent = text;
 }
 
-// 🎤 Start continuous voice input if Talk Mode is on
+// Standard voice input
 function startVoiceInput() {
-  if (!("webkitSpeechRecognition" in window)) {
-    alert("🎤 Voice recognition not supported.");
-    return;
-  }
+  if (!("webkitSpeechRecognition" in window)) return alert("🎤 Voice recognition not supported.");
 
-  const recog = new webkitSpeechRecognition();
-  recog.lang = "en-US";
-  recog.interimResults = false;
-  recog.maxAlternatives = 1;
+  stopRecognition(); // Stop previous if any
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
 
-  recog.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    const inputField = document.getElementById("userInput");
-    inputField.value = transcript;
-    inputField.blur();
-    sendMessage(transcript); // direct send
-
-    // If Talk Mode on, restart listening after bot speaks
-    if (isTalkModeOn) {
-      // Wait till speech ends
-      const restartListener = () => {
-        if (!synth.speaking) {
-          startVoiceInput(); // loop again
-        } else {
-          setTimeout(restartListener, 300); // check again
-        }
-      };
-      restartListener();
-    }
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    document.getElementById("userInput").value = transcript;
+    sendMessage(transcript);
   };
-
-  recog.onerror = (event) => {
-    console.error("Speech recognition error:", event.error);
-    if (isTalkModeOn) {
-      setTimeout(() => startVoiceInput(), 1000); // try again
-    }
-  };
-
-  recog.start();
+  recognition.start();
 }
 
-// 🗣️ Speak the bot response
-function speakOutLoud(text) {
+// Continuous Talk Mode input
+function startContinuousVoiceInput() {
+  if (!("webkitSpeechRecognition" in window)) return;
+  stopRecognition();
+
+  recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.continuous = false;
+
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    speakStop(); // Stop current speaking if new question asked
+    sendMessage(transcript);
+  };
+
+  recognition.onerror = (e) => {
+    console.error("Recognition error:", e.error);
+    if (isTalkModeOn) setTimeout(startContinuousVoiceInput, 1000); // retry
+  };
+
+  recognition.onend = () => {
+    if (isTalkModeOn) startContinuousVoiceInput(); // loop
+  };
+
+  recognition.start();
+}
+
+// Stop recognition
+function stopRecognition() {
+  if (recognition) {
+    recognition.onend = null;
+    recognition.stop();
+    recognition = null;
+  }
+}
+
+// Speak output
+function speakOutLoud(text, onEndCallback = null) {
   if (!synth) return;
-  if (synth.speaking) synth.cancel(); // interrupt previous
+  speakStop();
 
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US"; // or "hi-IN" for Hindi
+  utter.lang = "en-US";
   utter.rate = 1;
   utter.pitch = 1;
+
+  utter.onend = () => {
+    if (onEndCallback) onEndCallback();
+  };
+
   synth.speak(utter);
+}
+
+// Stop speech
+function speakStop() {
+  if (synth.speaking) synth.cancel();
 }
