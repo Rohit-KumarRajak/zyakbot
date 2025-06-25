@@ -75,21 +75,30 @@ function replaceLastBotMessage(text) {
 function startVoiceInput() {
   const input = document.getElementById("userInput");
 
-  // ✅ Prevent virtual keyboard popup
-  input.blur();          // Hide keyboard if already opened
-  input.disabled = true; // Prevent auto-open of keyboard
+  // ✅ Blur first to close keyboard
+  input.blur();
 
-  // 🔊 Play beep sound if available
+  // ✅ Use temporary disabled hidden input to suppress keyboard popup
+  const tempInput = document.createElement("input");
+  tempInput.setAttribute("type", "text");
+  tempInput.style.position = "absolute";
+  tempInput.style.opacity = "0";
+  tempInput.style.height = "0";
+  tempInput.style.fontSize = "16px"; // prevent iOS zoom
+  document.body.appendChild(tempInput);
+  tempInput.focus();
+  setTimeout(() => tempInput.remove(), 100); // clean up after 100ms
+
+  // 🔊 Beep
   const beep = document.getElementById("beep");
   if (beep) {
     beep.currentTime = 0;
-    beep.play().catch((e) => console.error("Beep error:", e));
+    beep.play().catch((e) => console.warn("Beep error:", e));
   }
 
-  // 🧠 Check browser support
+  // 🎤 Voice Recognition
   if (!("webkitSpeechRecognition" in window)) {
-    alert("🎤 Voice recognition not supported in this browser.");
-    input.disabled = false;
+    alert("🎤 Voice recognition not supported.");
     return;
   }
 
@@ -101,7 +110,7 @@ function startVoiceInput() {
   recognition.onresult = (event) => {
     const transcript = event.results[0][0].transcript;
     input.value = transcript;
-    setTimeout(() => sendMessage(), 300); // Allow brief pause before sending
+    setTimeout(() => sendMessage(), 300);
   };
 
   recognition.onerror = (e) => {
@@ -109,7 +118,6 @@ function startVoiceInput() {
   };
 
   recognition.onend = () => {
-    // ✅ Re-enable input field once recognition ends
     input.disabled = false;
   };
 
