@@ -1,30 +1,36 @@
 let isTalkModeOn = false;
 const synth = window.speechSynthesis;
 let lastBotMessage = "";
+let isFirstInteraction = true;
 
+// DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
-  // Setup Talk Mode button
+  // Talk Mode Toggle
   document.getElementById("talkModeBtn").addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
     const btn = document.getElementById("talkModeBtn");
     btn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
-    // If Talk Mode turned ON after message was already shown
-    if (isTalkModeOn && lastBotMessage !== "") {
+    if (isTalkModeOn && lastBotMessage) {
       speakOutLoud(lastBotMessage);
-    }
-
-    // If turned OFF, stop any speaking
-    if (!isTalkModeOn && synth.speaking) {
+    } else if (!isTalkModeOn && synth.speaking) {
       synth.cancel();
     }
   });
+
+  // 🧠 Auto greeting on load (for faster first message)
+  if (isFirstInteraction) {
+    isFirstInteraction = false;
+    setTimeout(() => {
+      sendMessage("Hello");
+    }, 300); // small delay after load
+  }
 });
 
 // 🧠 Send message to backend
-function sendMessage() {
+function sendMessage(msgFromVoice = null) {
   const userInput = document.getElementById("userInput");
-  const message = userInput.value.trim();
+  const message = msgFromVoice || userInput.value.trim();
   if (message === "") return;
 
   addMessage("user", message);
@@ -57,7 +63,7 @@ function sendMessage() {
     });
 }
 
-// 💬 Add chat message
+// 💬 Add message to chat
 function addMessage(sender, text) {
   const chat = document.getElementById("chat");
   const div = document.createElement("div");
@@ -76,7 +82,7 @@ function replaceLastBotMessage(text) {
   }
 }
 
-// 🎤 Voice input
+// 🎤 Start continuous voice input if Talk Mode is on
 function startVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) {
     alert("🎤 Voice recognition not supported.");
@@ -84,7 +90,7 @@ function startVoiceInput() {
   }
 
   const recog = new webkitSpeechRecognition();
-  recog.lang = "en-US"; // Default to English, or change to "hi-IN"
+  recog.lang = "en-US";
   recog.interimResults = false;
   recog.maxAlternatives = 1;
 
@@ -93,23 +99,39 @@ function startVoiceInput() {
     const inputField = document.getElementById("userInput");
     inputField.value = transcript;
     inputField.blur();
-    setTimeout(() => sendMessage(), 300);
+    sendMessage(transcript); // direct send
+
+    // If Talk Mode on, restart listening after bot speaks
+    if (isTalkModeOn) {
+      // Wait till speech ends
+      const restartListener = () => {
+        if (!synth.speaking) {
+          startVoiceInput(); // loop again
+        } else {
+          setTimeout(restartListener, 300); // check again
+        }
+      };
+      restartListener();
+    }
   };
 
   recog.onerror = (event) => {
     console.error("Speech recognition error:", event.error);
+    if (isTalkModeOn) {
+      setTimeout(() => startVoiceInput(), 1000); // try again
+    }
   };
 
   recog.start();
 }
 
-// 🗣️ Speak out loud
+// 🗣️ Speak the bot response
 function speakOutLoud(text) {
   if (!synth) return;
-  if (synth.speaking) synth.cancel(); // Stop any current speech
+  if (synth.speaking) synth.cancel(); // interrupt previous
 
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US"; // Change to "hi-IN" for Hindi
+  utter.lang = "en-US"; // or "hi-IN" for Hindi
   utter.rate = 1;
   utter.pitch = 1;
   synth.speak(utter);
