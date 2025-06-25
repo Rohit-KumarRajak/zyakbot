@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>ZyakBot – Rohit AI Chatbot</title>
   <meta name="description" content="ZyakBot is an AI chatbot created by Rohit Kumar Rajak for instant answers.">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
@@ -15,26 +15,29 @@
       <h2>💬 Ask anything below</h2>
     </header>
 
-    <div class="chat-container" id="chat"></div>
+    <main class="chat-container" id="chat"></main>
 
-    <div class="input-area">
+    <section class="input-area">
       <input type="text" id="userInput" placeholder="Type your question..." autocomplete="off" />
       <button onclick="sendMessage()">Send</button>
       <button onclick="startVoiceInput()">🎤 Speak</button>
       <button id="talkModeBtn">🔈 Talk Mode: OFF</button>
-    </div>
+    </section>
 
     <div class="fullscreen-toggle">
       <button onclick="toggleFullscreen()" id="fullscreenBtn">🔲 Fullscreen</button>
     </div>
 
     <footer class="founder-footer" id="footer">
-      <img src="PF.png" alt="Founder" class="founder-img-circle" />
-      <p><strong>Founder: Rohit Kumar Rajak</strong></p>
+      <img src="PF.png" alt="Founder: Rohit Kumar Rajak" class="founder-img-circle" />
+      <p>Founder: Rohit Kumar Rajak</p>
     </footer>
   </div>
 
-  <script src="script.js"></script>
+  <!-- 🔊 Beep Sound for Voice Activation -->
+  <audio id="beep" src="beep.mp3" preload="auto"></audio>
+
+  <script src="script.js" defer></script>
   <script>
     function toggleFullscreen() {
       const container = document.getElementById("mainContainer");
