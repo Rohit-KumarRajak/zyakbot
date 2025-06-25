@@ -223,3 +223,13 @@ footer p {
   from { opacity: 0; transform: translateY(5px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* 🛠️ Prevent keyboard pop-up on mobile speech */
+input[type="text"]:-webkit-autofill,
+input[type="text"]:focus {
+  caret-color: transparent !important;
+}
+
+/* 📱 Prevent keyboard zoom on iOS */
+input[type="text"] {
+  font-size: 16px;
+}
