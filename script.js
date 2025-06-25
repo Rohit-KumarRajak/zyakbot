@@ -2,14 +2,13 @@ let isTalkModeOn = false;
 let recognition = null;
 let synth = window.speechSynthesis;
 let lastBotMessage = "";
+let debounceTimer = null;
 
-// DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("talkModeBtn").addEventListener("click", () => {
+  const talkBtn = document.getElementById("talkModeBtn");
+  talkBtn.addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
-    document.getElementById("talkModeBtn").textContent = isTalkModeOn
-      ? "🗣️ Talk Mode: ON"
-      : "🔇 Talk Mode: OFF";
+    talkBtn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
     if (isTalkModeOn) {
       if (lastBotMessage) speakOutLoud(lastBotMessage);
@@ -21,15 +20,14 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Send message to backend
 function sendMessage(message = null) {
-  const userInput = document.getElementById("userInput");
-  const msg = message || userInput.value.trim();
+  const input = document.getElementById("userInput");
+  const msg = message || input.value.trim();
   if (!msg) return;
 
   addMessage("user", msg);
-  userInput.value = "";
-  userInput.disabled = true;
+  input.value = "";
+  input.disabled = true;
   addMessage("bot", "⏳ Thinking...");
 
   fetch("https://zyakbot-backend.onrender.com/chat", {
@@ -38,8 +36,8 @@ function sendMessage(message = null) {
     credentials: "include",
     body: JSON.stringify({ message: msg }),
   })
-    .then((res) => res.json())
-    .then((data) => {
+    .then(res => res.json())
+    .then(data => {
       lastBotMessage = data.reply;
       replaceLastBotMessage(data.reply);
       if (isTalkModeOn) {
@@ -48,30 +46,24 @@ function sendMessage(message = null) {
         });
       }
     })
-    .catch(() => {
-      replaceLastBotMessage("❌ Error connecting to the server.");
-    })
-    .finally(() => {
-      userInput.disabled = false;
-    });
+    .catch(() => replaceLastBotMessage("❌ Error connecting to the server."))
+    .finally(() => (input.disabled = false));
 }
 
-// Add message
 function addMessage(sender, text) {
   const div = document.createElement("div");
   div.className = sender === "user" ? "user-msg" : "bot-msg";
   div.textContent = text;
-  document.getElementById("chat").appendChild(div);
-  document.getElementById("chat").scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+  const chat = document.getElementById("chat");
+  chat.appendChild(div);
+  chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
-// Replace last "Thinking..." bot message
 function replaceLastBotMessage(text) {
   const bots = document.getElementsByClassName("bot-msg");
-  if (bots.length > 0) bots[bots.length - 1].textContent = text;
+  if (bots.length) bots[bots.length - 1].textContent = text;
 }
 
-// Manual voice input (button 🎤 Speak)
 function startVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) return alert("🎤 Voice recognition not supported.");
   stopRecognition();
@@ -79,47 +71,39 @@ function startVoiceInput() {
   recognition.lang = "en-US";
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
-
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    document.getElementById("userInput").value = transcript;
-    sendMessage(transcript);
-  };
-
-  recognition.onerror = (e) => console.error("Voice input error:", e.error);
+  recognition.onresult = e => sendMessage(e.results[0][0].transcript);
   recognition.start();
 }
 
-// Continuous Talk Mode input (🔈)
 function startContinuousVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) return;
   stopRecognition();
-
   recognition = new webkitSpeechRecognition();
   recognition.lang = "en-US";
   recognition.interimResults = false;
-  recognition.continuous = false; // single question per cycle
-  recognition.maxAlternatives = 1;
+  recognition.continuous = false;
 
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
-    speakStop(); // Interrupt current bot response
-    sendMessage(transcript);
+  recognition.onresult = e => {
+    clearTimeout(debounceTimer);
+    speakStop();
+    sendMessage(e.results[0][0].transcript);
   };
 
-  recognition.onerror = (e) => {
-    console.warn("Recognition error:", e.error);
-    if (isTalkModeOn) setTimeout(startContinuousVoiceInput, 800);
+  recognition.onerror = e => {
+    if (isTalkModeOn && e.error !== "no-speech") {
+      debounceTimer = setTimeout(startContinuousVoiceInput, 1500);
+    }
   };
 
   recognition.onend = () => {
-    if (isTalkModeOn) startContinuousVoiceInput();
+    if (isTalkModeOn) {
+      debounceTimer = setTimeout(startContinuousVoiceInput, 1000);
+    }
   };
 
   recognition.start();
 }
 
-// Stop recognition
 function stopRecognition() {
   if (recognition) {
     recognition.onend = null;
@@ -128,24 +112,17 @@ function stopRecognition() {
   }
 }
 
-// Speak output
-function speakOutLoud(text, onEndCallback = null) {
+function speakOutLoud(text, onEnd) {
   if (!synth) return;
-  speakStop(); // Stop previous speaking if any
-
+  speakStop();
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "en-US";
   utter.rate = 1;
   utter.pitch = 1;
-
-  utter.onend = () => {
-    if (onEndCallback) onEndCallback();
-  };
-
+  utter.onend = () => onEnd?.();
   synth.speak(utter);
 }
 
-// Stop current speaking
 function speakStop() {
-  if (synth.speaking || synth.pending) synth.cancel();
+  if (synth.speaking) synth.cancel();
 }
