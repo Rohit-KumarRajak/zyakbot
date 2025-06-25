@@ -2,20 +2,21 @@ let isTalkModeOn = false;
 let recognition = null;
 let synth = window.speechSynthesis;
 let lastBotMessage = "";
-let isSpeaking = false;
 
-// Initialize Talk Mode Button
+// DOM Ready
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("talkModeBtn").addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
-    document.getElementById("talkModeBtn").textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
+    document.getElementById("talkModeBtn").textContent = isTalkModeOn
+      ? "🗣️ Talk Mode: ON"
+      : "🔇 Talk Mode: OFF";
 
     if (isTalkModeOn) {
-      if (lastBotMessage) speakOutLoud(lastBotMessage, startContinuousVoiceInput);
-      else startContinuousVoiceInput();
+      if (lastBotMessage) speakOutLoud(lastBotMessage);
+      startContinuousVoiceInput();
     } else {
       stopRecognition();
-      speakStop();
+      synth.cancel();
     }
   });
 });
@@ -55,7 +56,7 @@ function sendMessage(message = null) {
     });
 }
 
-// Add message to chat
+// Add message
 function addMessage(sender, text) {
   const div = document.createElement("div");
   div.className = sender === "user" ? "user-msg" : "bot-msg";
@@ -64,16 +65,15 @@ function addMessage(sender, text) {
   document.getElementById("chat").scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
-// Replace last bot message
+// Replace last "Thinking..." bot message
 function replaceLastBotMessage(text) {
   const bots = document.getElementsByClassName("bot-msg");
   if (bots.length > 0) bots[bots.length - 1].textContent = text;
 }
 
-// Standard voice input
+// Manual voice input (button 🎤 Speak)
 function startVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) return alert("🎤 Voice recognition not supported.");
-
   stopRecognition();
   recognition = new webkitSpeechRecognition();
   recognition.lang = "en-US";
@@ -85,10 +85,12 @@ function startVoiceInput() {
     document.getElementById("userInput").value = transcript;
     sendMessage(transcript);
   };
+
+  recognition.onerror = (e) => console.error("Voice input error:", e.error);
   recognition.start();
 }
 
-// Continuous voice input
+// Continuous Talk Mode input (🔈)
 function startContinuousVoiceInput() {
   if (!("webkitSpeechRecognition" in window)) return;
   stopRecognition();
@@ -96,21 +98,22 @@ function startContinuousVoiceInput() {
   recognition = new webkitSpeechRecognition();
   recognition.lang = "en-US";
   recognition.interimResults = false;
-  recognition.continuous = false;
+  recognition.continuous = false; // single question per cycle
+  recognition.maxAlternatives = 1;
 
   recognition.onresult = (e) => {
     const transcript = e.results[0][0].transcript;
-    speakStop(); // interrupt current speech
+    speakStop(); // Interrupt current bot response
     sendMessage(transcript);
   };
 
   recognition.onerror = (e) => {
     console.warn("Recognition error:", e.error);
-    if (isTalkModeOn) setTimeout(startContinuousVoiceInput, 1000);
+    if (isTalkModeOn) setTimeout(startContinuousVoiceInput, 800);
   };
 
   recognition.onend = () => {
-    if (isTalkModeOn && !isSpeaking) startContinuousVoiceInput();
+    if (isTalkModeOn) startContinuousVoiceInput();
   };
 
   recognition.start();
@@ -125,29 +128,24 @@ function stopRecognition() {
   }
 }
 
-// Speak text
+// Speak output
 function speakOutLoud(text, onEndCallback = null) {
   if (!synth) return;
-  speakStop();
+  speakStop(); // Stop previous speaking if any
 
   const utter = new SpeechSynthesisUtterance(text);
   utter.lang = "en-US";
   utter.rate = 1;
   utter.pitch = 1;
-  isSpeaking = true;
 
   utter.onend = () => {
-    isSpeaking = false;
     if (onEndCallback) onEndCallback();
   };
 
   synth.speak(utter);
 }
 
-// Stop speaking
+// Stop current speaking
 function speakStop() {
-  if (synth.speaking) {
-    synth.cancel();
-    isSpeaking = false;
-  }
+  if (synth.speaking || synth.pending) synth.cancel();
 }
