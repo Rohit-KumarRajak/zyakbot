@@ -73,6 +73,8 @@ function replaceLastBotMessage(text) {
 
 // 🎤 Start voice input
 function startVoiceInput() {
+    document.getElementById("userInput").blur(); // 🔧 Hide keyboard
+
   const beep = document.getElementById("beep");
   if (beep) beep.play();
 
