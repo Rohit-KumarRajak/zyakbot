@@ -1,116 +1,122 @@
 let isTalkModeOn = false;
-const synth = window.speechSynthesis;
+let synth = window.speechSynthesis;
 let lastBotMessage = "";
 
-document.addEventListener("DOMContentLoaded", () => {
-  // Setup Talk Mode button
-  document.getElementById("talkModeBtn").addEventListener("click", () => {
+// DOM loaded
+window.addEventListener("DOMContentLoaded", () => {
+  const talkBtn = document.getElementById("talkModeBtn");
+  talkBtn.addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
-    const btn = document.getElementById("talkModeBtn");
-    btn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
+    talkBtn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
-    // If Talk Mode turned ON after message was already shown
-    if (isTalkModeOn && lastBotMessage !== "") {
-      speakOutLoud(lastBotMessage);
-    }
-
-    // If turned OFF, stop any speaking
-    if (!isTalkModeOn && synth.speaking) {
-      synth.cancel();
-    }
+    if (isTalkModeOn && lastBotMessage) speakOutLoud(lastBotMessage);
+    else speakStop();
   });
 });
 
-// 🧠 Send message to backend
-function sendMessage() {
-  const userInput = document.getElementById("userInput");
-  const message = userInput.value.trim();
-  if (message === "") return;
+function sendMessage(message = null) {
+  const input = document.getElementById("userInput");
+  const msg = message || input.value.trim();
+  if (!msg) return;
 
-  addMessage("user", message);
-  userInput.value = "";
-  userInput.disabled = true;
-
+  speakStop();
+  addMessage("user", msg);
+  input.value = "";
+  input.disabled = true;
   addMessage("bot", "⏳ Thinking...");
 
   fetch("https://zyakbot-backend.onrender.com/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message: msg }),
   })
-    .then((res) => {
-      if (!res.ok) throw new Error("Server error");
-      return res.json();
-    })
-    .then((data) => {
+    .then(res => res.json())
+    .then(data => {
       lastBotMessage = data.reply;
       replaceLastBotMessage(data.reply);
       if (isTalkModeOn) speakOutLoud(data.reply);
     })
-    .catch((err) => {
-      console.error("Error:", err);
+    .catch(err => {
+      console.error("❌ Fetch error:", err);
       replaceLastBotMessage("❌ Error connecting to the server.");
     })
     .finally(() => {
-      userInput.disabled = false;
+      input.disabled = false;
+      input.blur();
     });
 }
 
-// 💬 Add chat message
 function addMessage(sender, text) {
-  const chat = document.getElementById("chat");
   const div = document.createElement("div");
   div.className = sender === "user" ? "user-msg" : "bot-msg";
   div.textContent = text;
+
+  const chat = document.getElementById("chat");
   chat.appendChild(div);
   chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
-// 🔁 Replace last bot message
 function replaceLastBotMessage(text) {
-  const chat = document.getElementById("chat");
-  const messages = chat.getElementsByClassName("bot-msg");
-  if (messages.length > 0) {
-    messages[messages.length - 1].textContent = text;
+  const bots = document.getElementsByClassName("bot-msg");
+  if (bots.length) {
+    bots[bots.length - 1].textContent = text;
+    document.getElementById("chat").scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
   }
 }
 
-// 🎤 Voice input
 function startVoiceInput() {
+  const input = document.getElementById("userInput");
+
+  // Prevent keyboard pop-up (on mobile)
+  input.blur();
+  const dummy = document.createElement("input");
+  dummy.type = "text";
+  dummy.setAttribute("inputmode", "none");
+  dummy.style.position = "absolute";
+  dummy.style.opacity = "0";
+  document.body.appendChild(dummy);
+  dummy.focus();
+  setTimeout(() => dummy.remove(), 150);
+
+  const beep = document.getElementById("beep");
+  if (beep) {
+    beep.currentTime = 0;
+    beep.play().catch(err => console.warn("Beep error:", err));
+  }
+
   if (!("webkitSpeechRecognition" in window)) {
     alert("🎤 Voice recognition not supported.");
     return;
   }
 
-  const recog = new webkitSpeechRecognition();
-  recog.lang = "en-US"; // Default to English, or change to "hi-IN"
-  recog.interimResults = false;
-  recog.maxAlternatives = 1;
+  const recognition = new webkitSpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
 
-  recog.onresult = (event) => {
-    const transcript = event.results[0][0].transcript;
-    const inputField = document.getElementById("userInput");
-    inputField.value = transcript;
-    inputField.blur();
-    setTimeout(() => sendMessage(), 300);
+  recognition.onresult = (e) => {
+    const transcript = e.results[0][0].transcript;
+    input.value = transcript;
+    setTimeout(() => sendMessage(), 200);
   };
 
-  recog.onerror = (event) => {
-    console.error("Speech recognition error:", event.error);
-  };
-
-  recog.start();
+  recognition.onerror = (e) => console.error("🎤 Mic error:", e.error);
+  recognition.onend = () => input.disabled = false;
+  recognition.start();
 }
 
-// 🗣️ Speak out loud
 function speakOutLoud(text) {
   if (!synth) return;
-  if (synth.speaking) synth.cancel(); // Stop any current speech
+  speakStop();
 
   const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = "en-US"; // Change to "hi-IN" for Hindi
-  utter.rate = 1;
+  utter.lang = "en-US";
   utter.pitch = 1;
+  utter.rate = 1;
   synth.speak(utter);
+}
+
+function speakStop() {
+  if (synth?.speaking) synth.cancel();
 }
