@@ -3,23 +3,27 @@ let synth = window.speechSynthesis;
 let lastBotMessage = "";
 
 // DOM loaded
-window.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
   const talkBtn = document.getElementById("talkModeBtn");
   talkBtn.addEventListener("click", () => {
     isTalkModeOn = !isTalkModeOn;
     talkBtn.textContent = isTalkModeOn ? "🗣️ Talk Mode: ON" : "🔇 Talk Mode: OFF";
 
-    if (isTalkModeOn && lastBotMessage) speakOutLoud(lastBotMessage);
-    else speakStop();
+    if (isTalkModeOn && lastBotMessage) {
+      speakOutLoud(lastBotMessage);
+    } else {
+      speakStop();
+    }
   });
 });
 
+// Send message
 function sendMessage(message = null) {
   const input = document.getElementById("userInput");
   const msg = message || input.value.trim();
   if (!msg) return;
 
-  speakStop();
+  speakStop(); // ⛔ Stop old speech before sending
   addMessage("user", msg);
   input.value = "";
   input.disabled = true;
@@ -43,10 +47,11 @@ function sendMessage(message = null) {
     })
     .finally(() => {
       input.disabled = false;
-      input.blur();
+      input.focus();
     });
 }
 
+// Add message to chat
 function addMessage(sender, text) {
   const div = document.createElement("div");
   div.className = sender === "user" ? "user-msg" : "bot-msg";
@@ -57,6 +62,7 @@ function addMessage(sender, text) {
   chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
 }
 
+// Replace last bot reply
 function replaceLastBotMessage(text) {
   const bots = document.getElementsByClassName("bot-msg");
   if (bots.length) {
@@ -65,26 +71,32 @@ function replaceLastBotMessage(text) {
   }
 }
 
+// 🎤 Start voice input
 function startVoiceInput() {
   const input = document.getElementById("userInput");
 
-  // Prevent keyboard pop-up (on mobile)
+  // ✅ Blur first to close keyboard
   input.blur();
-  const dummy = document.createElement("input");
-  dummy.type = "text";
-  dummy.setAttribute("inputmode", "none");
-  dummy.style.position = "absolute";
-  dummy.style.opacity = "0";
-  document.body.appendChild(dummy);
-  dummy.focus();
-  setTimeout(() => dummy.remove(), 150);
 
+  // ✅ Use temporary disabled hidden input to suppress keyboard popup
+  const tempInput = document.createElement("input");
+  tempInput.setAttribute("type", "text");
+  tempInput.style.position = "absolute";
+  tempInput.style.opacity = "0";
+  tempInput.style.height = "0";
+  tempInput.style.fontSize = "16px"; // prevent iOS zoom
+  document.body.appendChild(tempInput);
+  tempInput.focus();
+  setTimeout(() => tempInput.remove(), 100); // clean up after 100ms
+
+  // 🔊 Beep
   const beep = document.getElementById("beep");
   if (beep) {
     beep.currentTime = 0;
-    beep.play().catch(err => console.warn("Beep error:", err));
+    beep.play().catch((e) => console.warn("Beep error:", e));
   }
 
+  // 🎤 Voice Recognition
   if (!("webkitSpeechRecognition" in window)) {
     alert("🎤 Voice recognition not supported.");
     return;
@@ -95,17 +107,24 @@ function startVoiceInput() {
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
-  recognition.onresult = (e) => {
-    const transcript = e.results[0][0].transcript;
+  recognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
     input.value = transcript;
-    setTimeout(() => sendMessage(), 200);
+    setTimeout(() => sendMessage(), 300);
   };
 
-  recognition.onerror = (e) => console.error("🎤 Mic error:", e.error);
-  recognition.onend = () => input.disabled = false;
+  recognition.onerror = (e) => {
+    console.error("🎤 Mic error:", e.error);
+  };
+
+  recognition.onend = () => {
+    input.disabled = false;
+  };
+
   recognition.start();
 }
 
+// 🔈 Speak message
 function speakOutLoud(text) {
   if (!synth) return;
   speakStop();
@@ -117,6 +136,9 @@ function speakOutLoud(text) {
   synth.speak(utter);
 }
 
+// ❌ Stop speech
 function speakStop() {
-  if (synth?.speaking) synth.cancel();
+  if (synth && synth.speaking) {
+    synth.cancel();
+  }
 }
