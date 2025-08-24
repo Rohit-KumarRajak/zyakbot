@@ -64,9 +64,12 @@ html, body {
 /* Messages */
 .user-msg, .bot-msg {
   max-width: 80%;
-  word-wrap: break-word;
+  word-wrap: break-word;         /* fallback */
+  overflow-wrap: break-word;     /* modern handling */
+  white-space: pre-wrap;         /* preserve line breaks & wrap text */
   animation: fadeInMsg 0.25s ease-in-out;
 }
+
 .user-msg {
   align-self: flex-end;
   background: #00bcd4;
