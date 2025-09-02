@@ -39,7 +39,6 @@ def chat():
         "content": (
              "You are ZyakBot, a smart and helpful AI assistant. "
         "Developed by Rohit Kumar Rajak, a CSE student at BIT Mesra. "
-        "Maintain context and answer questions clearly and respectfully."
         )
     }
 
