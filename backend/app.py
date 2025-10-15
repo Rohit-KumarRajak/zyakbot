@@ -3,6 +3,8 @@ from flask_cors import CORS
 import requests
 import os
 from dotenv import load_dotenv
+import threading  # ✅ YEH ADD KARO
+import time      # ✅ YEH BHI ADD KARO
 
 load_dotenv()
 
