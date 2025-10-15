@@ -18,6 +18,40 @@ app.config.update(
 # Allow frontend from GitHub Pages
 CORS(app, supports_credentials=True, origins=["https://rohit-kumarrajak.github.io"])
 
+# ✅ ADD HEALTH CHECK ROUTE (Important for Render free tier)
+@app.route('/')
+def home():
+    return jsonify({
+        "message": "ZyakBot Backend is running!",
+        "status": "active", 
+        "developer": "Rohit Kumar Rajak",
+        "timestamp": time.time()
+    })
+
+# ✅ ADD HEALTH CHECK ENDPOINT (Render auto-pings this)
+@app.route('/health')
+def health_check():
+    return jsonify({"status": "healthy", "timestamp": time.time()})
+
+# ✅ AUTO-PING SERVICE (Keeps instance awake)
+def keep_alive():
+    def ping():
+        while True:
+            try:
+                requests.get("https://zyakbot-backend.onrender.com/health")
+                print("🔄 Pinged server to keep awake")
+            except:
+                print("⚠️ Ping failed")
+            time.sleep(300)  # Ping every 5 minutes
+    
+    thread = threading.Thread(target=ping)
+    thread.daemon = True
+    thread.start()
+
+# Start keep-alive when app runs (but not in debug mode)
+if not os.environ.get("DEBUG"):
+    keep_alive()
+
 
 @app.route('/chat', methods=['POST', 'OPTIONS'])
 def chat():
