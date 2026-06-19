@@ -2,103 +2,168 @@ from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 import requests
 import os
+import traceback
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "fallback-secret")  # required for sessions
 
-# Flask session cookie settings
+app.secret_key = os.getenv("SECRET_KEY", "fallback-secret")
+
 app.config.update(
-    SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_SAMESITE="None",
     SESSION_COOKIE_SECURE=True
 )
 
-# Allow frontend from GitHub Pages
-CORS(app, supports_credentials=True, origins=["https://rohit-kumarrajak.github.io"])
+CORS(
+    app,
+    supports_credentials=True,
+    origins=["https://rohit-kumarrajak.github.io"]
+)
 
 
-@app.route('/chat', methods=['POST', 'OPTIONS'])
+@app.route("/chat", methods=["POST", "OPTIONS"])
 def chat():
-    if request.method == 'OPTIONS':
-        return '', 200  # CORS preflight
 
-    user_input = request.json.get('message', '')
-
-    if 'history' not in session:
-        session['history'] = []
-
-    session['history'].append({"role": "user", "content": user_input})
-
-    print("🔍 Session History:", session.get('history'))
-
-    # Your system prompt (unchanged)
-    system_prompt = {
-        "role": "system",
-        "content": (
-             "You are ZyakBot, a smart and helpful AI assistant. "
-        "Developed by Rohit Kumar Rajak, a CSE student at BIT Mesra. "
-        )
-    }
-
-    # Limit context to last 15 messages + system prompt
-    messages = [system_prompt] + session['history'][-15:]
-
-    headers = {
-        'Authorization': f"Bearer {os.getenv('GROQ_API_KEY')}",
-        'Content-Type': 'application/json'
-    }
-
-    payload = {
-        "model": "llama3-8b-8192",
-        "messages": messages
-    }
+    if request.method == "OPTIONS":
+        return "", 200
 
     try:
-        # Set a timeout (10 seconds) to avoid hanging on slow Groq API responses
+
+        data = request.get_json()
+
+        if not data:
+            return jsonify({"reply": "No JSON received"}), 400
+
+        user_input = data.get("message", "").strip()
+
+        if not user_input:
+            return jsonify({"reply": "Message cannot be empty"}), 400
+
+        if "history" not in session:
+            session["history"] = []
+
+        session["history"].append({
+            "role": "user",
+            "content": user_input
+        })
+
+        system_prompt = {
+            "role": "system",
+            "content": (
+                "You are ZyakBot, a smart and helpful AI assistant. "
+                "Developed by Rohit Kumar Rajak, a CSE student at BIT Mesra."
+            )
+        }
+
+        messages = [system_prompt] + session["history"][-15:]
+
+        api_key = os.getenv("GROQ_API_KEY")
+
+        if not api_key:
+            print("❌ GROQ_API_KEY missing")
+            return jsonify({
+                "reply": "Server configuration error."
+            }), 500
+
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        payload = {
+            "model": "llama3-8b-8192",
+            "messages": messages,
+            "temperature": 0.7
+        }
+
+        print("========== REQUEST ==========")
+        print(payload)
+        print("=============================")
+
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
             headers=headers,
             json=payload,
-            timeout=10
+            timeout=20
         )
-        response.raise_for_status()
-        data = response.json()
-        reply = data['choices'][0]['message']['content']
 
-        session['history'].append({"role": "assistant", "content": reply})
+        print("========== RESPONSE ==========")
+        print("Status:", response.status_code)
+        print(response.text)
+        print("==============================")
+
+        response.raise_for_status()
+
+        result = response.json()
+
+        reply = result["choices"][0]["message"]["content"]
+
+        session["history"].append({
+            "role": "assistant",
+            "content": reply
+        })
+
         session.modified = True
 
-        return jsonify({"reply": reply})
+        return jsonify({
+            "reply": reply
+        })
+
+    except requests.exceptions.HTTPError as e:
+
+        print("HTTP ERROR")
+        print(e)
+
+        if e.response is not None:
+            print(e.response.text)
+
+        traceback.print_exc()
+
+        return jsonify({
+            "reply": "Groq API HTTP Error",
+            "details": e.response.text if e.response else ""
+        }), 500
 
     except requests.exceptions.Timeout:
-        print("⚠️ Groq API timeout.")
-        return jsonify({"reply": "⚠️ Server timeout. Please try again."}), 504
 
-    except requests.exceptions.RequestException as e:
-        print("❌ Groq API error:", e)
-        return jsonify({"reply": "⚠️ Error connecting to Groq API."}), 500
+        traceback.print_exc()
+
+        return jsonify({
+            "reply": "Groq API Timeout"
+        }), 504
 
     except Exception as e:
-        print("❌ General error:", e)
-        return jsonify({"reply": "⚠️ Unexpected server error."}), 500
+
+        print("GENERAL ERROR")
+        traceback.print_exc()
+
+        return jsonify({
+            "reply": str(e)
+        }), 500
 
 
-@app.route('/reset', methods=['POST'])
+@app.route("/reset", methods=["POST"])
 def reset():
-    session.pop('history', None)
+    session.pop("history", None)
     return jsonify({"message": "History cleared."})
 
 
 @app.after_request
-def add_cors_headers(response):
-    response.headers.add("Access-Control-Allow-Credentials", "true")
-    response.headers.add("Access-Control-Allow-Origin", "https://rohit-kumarrajak.github.io")
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type")
-    response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+def add_headers(response):
+
+    response.headers["Access-Control-Allow-Origin"] = "https://rohit-kumarrajak.github.io"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+
     return response
 
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+if __name__ == "__main__":
+    app.run(
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", 5000)),
+        debug=True
+    )
