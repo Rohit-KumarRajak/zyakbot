@@ -85,8 +85,8 @@ def chat():
             "role": "system",
             "content": (
                 "You are ZyakBot, an intelligent AI assistant. "
-                "Developed by Gaurav Jha, "
-                "a IMBA student at BIT Mesra. "
+                "Developed by Rohit Kumar Rajak, "
+                "a CSE student at BIT Mesra. "
                 "Always answer politely, accurately and clearly."
             )
         }
